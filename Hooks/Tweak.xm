@@ -13,16 +13,14 @@ static void DLog(NSString *fmt, ...) {
     else { [line writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:nil]; }
 }
 
-%group Tweak
-
 %hook WBMainInputView
 
 - (void)layoutSubviews {
     %orig;
     @autoreleasepool {
-        DLog(@"WBMainInputView layoutSubviews, subviews=%ld", (long)self.subviews.count);
+        DLog(@"WBMainInputView layoutSubviews subviews=%ld", (long)self.subviews.count);
         for (UIView *v in self.subviews) {
-            DLog(@"  subview: %@ y=%.0f h=%.0f", NSStringFromClass([v class]), v.frame.origin.y, v.frame.size.height);
+            DLog(@"  %@ y=%.0f h=%.0f", NSStringFromClass([v class]), v.frame.origin.y, v.frame.size.height);
             if ([NSStringFromClass([v class]) containsString:@"Logo"] || [NSStringFromClass([v class]) containsString:@"logo"]) {
                 v.hidden = YES;
                 DLog(@"  -> hidden logo");
@@ -36,6 +34,4 @@ static void DLog(NSString *fmt, ...) {
 %ctor {
     DLog(@"===== WxkbCandidate injected =====");
     DLog(@"WBMainInputView: %s", objc_getClass("WBMainInputView") ? "found" : "NOT found");
-    %init(Tweak);
-    DLog(@"hooks installed");
 }
