@@ -8,6 +8,8 @@ permissions:
   contents: write
 
 env:
+  HOMEBREW_NO_AUTO_UPDATE: 1
+  HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
   THEOS: ${{ github.workspace }}/theos-roothide
 
 jobs:
@@ -18,34 +20,42 @@ jobs:
         with:
           xcode-version: '15.4'
       - uses: actions/checkout@v4
-      - name: Setup
+      - name: Setup Environment
         run: |
           echo "$THEOS/bin" >> "$GITHUB_PATH"
           echo "THEOS=$THEOS" >> "$GITHUB_ENV"
+          echo "THEOS_IGNORE_PARALLEL_BUILDING_NOTICE=yes" >> "$HOME/.theosrc"
+      - name: Bump version
+        run: |
+          VERSION="1.0.0-${{ github.run_number }}"
+          sed -i '' "s/^Version: .*/Version: ${VERSION}/" control
       - uses: actions/checkout@v4
         with:
           repository: roothide/theos
           path: theos-roothide
           submodules: recursive
-      - name: SDK
+      - name: Install SDK
         run: |
           mkdir -p "$THEOS/sdks"
-          git clone --depth 1 --filter=blob:none --sparse https://github.com/theos/sdks.git /tmp/sdks
-          git -C /tmp/sdks sparse-checkout set iPhoneOS16.5.sdk
-          cp -R /tmp/sdks/iPhoneOS16.5.sdk "$THEOS/sdks/"
-      - name: Deps
-        run: brew install ldid dpkg xz
-      - name: Build
+          STAGE="$(mktemp -d)"; trap 'rm -rf "$STAGE"' EXIT
+          git clone --depth 1 --filter=blob:none --sparse https://github.com/theos/sdks.git "$STAGE/sdks"
+          git -C "$STAGE/sdks" sparse-checkout set iPhoneOS16.5.sdk
+          cp -R "$STAGE/sdks/iPhoneOS16.5.sdk" "$THEOS/sdks/"
+      - name: Install deps
         run: |
-          make package FINALPACKAGE=1
+          brew install ldid dpkg xz
+          echo "$(brew --prefix)/bin" >> "$GITHUB_PATH"
+      - name: Build rootless
+        run: |
+          make clean THEOS_PACKAGE_SCHEME=rootless
+          make package THEOS_PACKAGE_SCHEME=rootless
           find ./packages -name "*.deb"
       - uses: actions/upload-artifact@v4
         with:
-          name: wxkbcandidate-deb
+          name: packages-rootless
           path: ./packages/*.deb
       - uses: softprops/action-gh-release@v2
         with:
           token: ${{ github.token }}
           tag_name: v1.0.0-${{ github.run_number }}
           files: ./packages/*.deb
-
