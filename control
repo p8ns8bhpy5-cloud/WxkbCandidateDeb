@@ -1,1 +1,9 @@
-
+Package: com.yourname.wxkbcandidate
+Name: WxkbCandidate
+Version: 1.0.0-1
+Architecture: iphoneos-arm64
+Description: Auto-hide WeType keyboard candidate bar when empty
+Maintainer: yourname
+Author: yourname
+Section: Tweaks
+Depends: mobilesubstrate (>= 0.9.5000) | ellekit (>= 0.1)
