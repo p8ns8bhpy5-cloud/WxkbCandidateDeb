@@ -1,6 +1,9 @@
 #import <UIKit/UIKit.h>
 #import <objc/runtime.h>
 
+@interface WBMainInputView : UIView
+@end
+
 static void DLog(NSString *fmt, ...) {
     va_list args; va_start(args, fmt);
     NSString *msg = [[NSString alloc] initWithFormat:fmt arguments:args];
